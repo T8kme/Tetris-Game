@@ -1,0 +1,437 @@
+////////////////////////////////////////////////////////////////////////////////
+// //
+// //
+// Tetris  Game v1.0                              //
+// Rafa³ Olszewski                               //
+// E4Y2S1                                    //
+// //
+// //																				//
+////////////////////////////////////////////////////////////////////////////////
+#include  <iostream>
+#include  <ctime>
+#include  <conio.h>
+#include  <cmath>
+
+#define BORDER_COLOR 1 // zmiana koloru ramki
+
+using namespace std;
+
+// Variable declarations
+const int g_high = 16; // max. 40
+const int g_width = 14; // max. 30
+const int g_size = 4; // max. 4
+int level = 1;
+int lines = 0;
+int points = 0;
+int combo = 0;
+int board[g_width][g_high];
+int block[g_size][2];
+bool if_combo;
+
+// Functions
+void Begin();
+void Refresh();
+void Draw();
+void Set(int, int);
+void start();
+void left();
+void right();
+void remove(int);
+void rotate();
+void center();
+void zamien_center(int);
+bool generuj();
+bool wczytaj();
+bool spadaj();
+bool linia(int);
+bool restart();
+// double round(double);
+
+///////////////////////////////////////////////////////////////////////////////
+
+int main() {
+	Begin();
+	start();
+	Draw();
+	for (; generuj();) {
+		Refresh();
+		bool dalej = true;
+		for (int a = 0; dalej; a++) {
+			int limit = 50000 / level;
+			if (a > limit) {
+				a = 0;
+				dalej = spadaj();
+				Refresh();
+			}
+			if (kbhit()) {
+				dalej = wczytaj();
+				Refresh();
+			}
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void Draw() // Drawanie ramki
+{
+	clrscr(); // czyszczenie konsoli
+	for (int a = 0; a < g_width + 2; a++) {
+		textcolor(BORDER_COLOR);
+		putch(219);
+	}
+	for (int a = 1; a <= g_high; a++) {
+		gotoxy(1, a + 1);
+		textcolor(BORDER_COLOR);
+		putch(219);
+		gotoxy(g_width + 2, a + 1);
+		putch(219);
+	}
+	cout << endl;
+	for (int a = 0; a < g_width + 2; a++) {
+		textcolor(BORDER_COLOR);
+		putch(219);
+	}
+}
+
+bool generuj() {
+	bool dalej = true;
+	for (int a = g_width / 2 - g_size / 2;
+	a <= g_width / 2 + g_size / 2; a++) // sprawdzenie czy
+	{ // wiersz pusty
+		if (board[a][0] != 0) {
+			dalej = false;
+		}
+	}
+	if (dalej) {
+		srand(time(0));
+		int x = g_width / 2;
+		int y = 0;
+		block[0][0] = x;
+		block[0][1] = y;
+		board[x][y] = 1;
+		for (int a = 1; a < g_size;) // generuj klocki
+		{
+			int element = rand() % a;
+			int kierunek = rand() % 4;
+			y = block[element][1];
+			x = block[element][0];
+			switch (kierunek) {
+			case 0:
+				if (y != 0 && board[x][y - 1] == 0) {
+					y--;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			case 1:
+				if (board[x][y + 1] == 0) {
+					y++;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			case 2:
+				if (board[x - 1][y] == 0) {
+					x--;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			case 3:
+				if (board[x + 1][y] == 0) {
+					x++;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			}
+			srand(rand());
+		}
+		center();
+		return true;
+	}
+	else // przerwij
+	{
+		gotoxy(1, g_high + 3);
+		cout << "Przegrales!" << endl;
+		cout << "Chcesz zaczac gre od nowa? T/N" << endl;
+		if (restart() == 1) {
+			start();
+			Draw();
+			return true;
+		}
+		else
+			return false;
+	}
+}
+
+void start() // zerowanie tablicy
+{
+	for (int a = 0; a < g_width; a++) {
+		for (int b = 0; b < g_high; b++) {
+			board[a][b] = 0;
+		}
+	}
+}
+
+void Refresh() {
+	for (int a = 0; a < g_high; a++) // rysowanie klockow
+	{
+		gotoxy(2, a + 2);
+		for (int b = 0; b < g_width; b++) {
+			if (board[b][a] == 1) { // leci
+				textcolor(10);
+				putch(177);
+			}
+			else if (board[b][a] == 2) { // lezy
+				textcolor(2);
+				putch(178);
+			}
+			else
+				cout << " ";
+		}
+	}
+	gotoxy(g_width + 4, 1); // statystyki
+	cout << "Punkty: " << points << endl;
+	gotoxy(g_width + 4, 2);
+	cout << "Combo: " << combo << endl;
+	gotoxy(g_width + 4, 3);
+	cout << "Poziom: " << level << endl;
+}
+
+bool wczytaj() // klawisze
+{
+	bool czy = true;
+	char znak = getch();
+	switch (znak) {
+	case 72:
+		rotate();
+		break;
+	case 80:
+		czy = spadaj();
+		break;
+	case 75:
+		left();
+		break;
+	case 77:
+		right();
+		break;
+	}
+	return czy;
+}
+
+bool spadaj() // przesuwanie obiektu w tablicy
+{
+	bool czy = true;
+	for (int a = 0; a < g_size; a++) {
+		if (block[a][1] + 1 >= g_high || board[block[a][0]][block[a][1] +
+			1] == 2) // stop
+		{ // spadanie
+			czy = false;
+		}
+	}
+	if (czy) {
+		for (int a = 0; a < g_size; a++) // przesuwanie
+		{
+			board[block[a][0]][block[a][1]] = 0; // usun stara pozycje
+			block[a][1]++;
+		}
+		for (int a = 0; a < g_size; a++) {
+			board[block[a][0]][block[a][1]] = 1; // napisz nowa
+		}
+		return true;
+	}
+	else {
+		for (int a = 0; a < g_size; a++) {
+			board[block[a][0]][block[a][1]] = 2;
+		}
+		if_combo = false;
+		for (int a = 0; a < g_high; a++) {
+			if (linia(a)) // jesli w jednej linii
+			{
+				remove(a);
+				combo++;
+				if_combo = true;
+				lines++;
+			}
+		}
+		if (!if_combo) // mnozenie punktow - combo
+		{
+			points += combo * combo;
+			combo = 0;
+		}
+		if (lines >= 5) // zwiekszanie levelu
+		{
+			lines %= 5;
+			level++;
+		}
+		return false;
+	}
+}
+
+void left() {
+	bool czy = true;
+	for (int a = 0; a < g_size; a++) {
+		if (block[a][0] - 1 < 0 || board[block[a][0] - 1][block[a][1]] == 2) {
+			czy = false;
+		}
+	}
+	if (czy) {
+		for (int a = 0; a < g_size; a++) {
+			board[block[a][0]][block[a][1]] = 0;
+			block[a][0]--;
+		}
+		for (int a = 0; a < g_size; a++) {
+			board[block[a][0]][block[a][1]] = 1;
+		}
+	}
+}
+
+void right() {
+	bool czy = true;
+	for (int a = 0; a < g_size; a++) {
+		if (block[a][0] + 1 >= g_width ||
+			board[block[a][0] + 1][block[a][1]] == 2) {
+			czy = false;
+		}
+	}
+	if (czy) {
+		for (int a = 0; a < g_size; a++) {
+			board[block[a][0]][block[a][1]] = 0;
+			block[a][0]++;
+		}
+		for (int a = 0; a < g_size; a++) {
+			board[block[a][0]][block[a][1]] = 1;
+		}
+	}
+}
+
+bool linia(int a) // zapelniony wiersz
+{
+	bool czy = true;
+	for (int b = 0; b < g_width; b++) {
+		if (board[b][a] != 2) {
+			czy = false;
+		}
+	}
+	return czy;
+}
+
+void remove(int a) // zbicie linii i przesuniecie w dol
+{
+	for (int b = a; b > 0; b--) {
+		for (int c = 0; c < g_width; c++) {
+			board[c][b] = board[c][b - 1];
+		}
+	}
+	for (int b = 0; b < g_width; b++) {
+		board[b][0] = 0;
+	}
+}
+
+void rotate() {
+	bool czy = true;
+
+	for (int a = 1; a < g_size; a++) {
+		int x = block[a][0] - block[0][0];
+		int y = block[a][1] - block[0][1];
+		if (board[block[0][0] - y][block[0][1] +
+			x] == 2 // czy mozna rotateic. kolizje
+			|| block[0][1] + x >= g_high || block[0][1] + x < 0 || block[0][0] -
+			y >= g_width || block[0][0] - y < 0) {
+			czy = false;
+		}
+	}
+	if (czy) {
+		for (int a = 1; a < g_size; a++) // obracanie
+		{
+			int x = block[a][0] - block[0][0];
+			int y = block[a][1] - block[0][1];
+			board[block[a][0]][block[a][1]] = 0;
+			block[a][0] = block[0][0] - y;
+			block[a][1] = block[0][1] + x;
+		}
+	}
+	for (int a = 0; a < g_size; a++) {
+		board[block[a][0]][block[a][1]] = 1; // uzupelnij tablice
+	}
+}
+
+void center() // ustalanie srodka klocka
+{
+	double x = 0;
+	double y = 0;
+	for (int a = 0; a < g_size; a++) {
+		x += block[a][0];
+		y += block[a][1];
+	}
+	x /= 4;
+	y /= 4;
+	bool czy = true;
+	for (int a = 1; a < g_size && czy; a++) {
+		if ((block[a][0] == round(x)) && (block[a][1] == round(y))) {
+			zamien_center(a);
+			czy = false;
+		}
+	}
+}
+
+void zamien_center(int a) // zmiana srodka klocka
+{
+	int tym = block[0][0];
+	block[0][0] = block[a][0];
+	block[a][0] = tym;
+	tym = block[0][1];
+	block[0][1] = block[a][1];
+	block[a][1] = tym;
+}
+
+double round(double x) // funkcja zaokraglania
+{
+	return floor(x + 0.5);
+}
+
+bool restart() // restart gry
+{
+	char znak = getch();
+	switch (znak) {
+	case 116: {
+			combo = 0;
+			points = 0;
+			level = 1;
+			for (int a = g_width / 2 - g_size / 2;
+			a <= g_width / 2 + g_size / 2; a++) {
+				board[a][0] = 0;
+			}
+			return true;
+		}
+	case 110:
+		return false;
+	default:
+		restart();
+	}
+}
+
+void Begin() // sygnatura
+{
+	printf("#######                              \n");
+	printf("   #    ###### ##### #####  #  ####  \n");
+	printf("   #    #        #   #    # # #      \n");
+	printf("   #    #####    #   #    # #  ####  \n");
+	printf("   #    #        #   #####  #      # \n");
+	printf("   #    #        #   #   #  # #    # \n");
+	printf("   #    ######   #   #    # #  ####  Ver 1.0\n\n");
+
+	printf("Autor: Rafal Olszewski E4Y2S1\n\nAby rozpaczac gre nacisnij dowolny klawisz..."
+		);
+	getch();
+}

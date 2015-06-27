@@ -1,0 +1,466 @@
+///////////////////////////////////////////////////////////////////////////////
+//                                                                           //
+//                                                                           //
+//                             Tetris Game v1.0                              //
+//                             Rafa³ Olszewski                               //
+//                                 E4Y2S1                                    //
+//                                                                           //
+//                                                                           //
+///////////////////////////////////////////////////////////////////////////////
+#include  <iostream>
+#include  <ctime>
+#include  <conio.h>
+#include  <cmath>
+
+#define KOLOR_RAMKI 1 // zmiana koloru ramki
+
+using namespace std;
+
+//Deklaracje zmiennych
+const int wysokosc = 16;   // max. 40
+const int szerokosc = 14;  // max. 30
+const int rozmiar = 4; // max. 4
+int poziom = 1;
+int linie = 0;
+int punkty = 0;
+int combo = 0;
+int plansza[szerokosc][wysokosc];
+int klocek[rozmiar][2];
+bool czy_combo;
+
+//Funkcje
+void rozpocznij();
+void odswiez();
+void wyswietl();
+void ustaw(int,int);
+void start();
+void lewo();
+void prawo();
+void zbij(int);
+void obroc();
+void srodek();
+void zamien_srodek(int);
+bool generuj();
+bool wczytaj();
+bool spadaj();
+bool linia(int);
+bool restart();
+double round(double);
+
+///////////////////////////////////////////////////////////////////////////////
+
+int main()
+{
+  rozpocznij();
+  start();
+  wyswietl();
+  for(;generuj();)
+  {
+	odswiez();
+	bool dalej = true;
+	for (int a = 0; dalej; a++)
+	{
+	  int limit = 50000/poziom;
+	  if (a > limit)
+	  {
+		a = 0;
+        dalej = spadaj();
+        odswiez();
+      }
+      if (kbhit())
+      {
+        dalej = wczytaj();
+        odswiez();
+      }
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void wyswietl()  //wyswietlanie ramki
+{
+  clrscr(); // czyszczenie konsoli
+  for (int a = 0; a < szerokosc+2; a++)
+  {
+	textcolor(KOLOR_RAMKI);
+	putch(219);
+  }
+  for (int a = 1; a <= wysokosc; a++)
+  {
+	gotoxy(1, a+1);
+	textcolor(KOLOR_RAMKI);
+	putch(219);
+	gotoxy(szerokosc+2, a+1);
+	putch(219);
+  }
+  cout << endl;
+  for (int a = 0; a < szerokosc+2; a++) 
+  {
+	 textcolor(KOLOR_RAMKI);
+	putch(219);
+  }
+}
+
+bool generuj()
+{
+  bool dalej = true;
+  for (int a = szerokosc/2-rozmiar/2; a <= szerokosc/2+rozmiar/2; a++) // sprawdzenie czy
+  {                                                                    // wiersz pusty
+	if (plansza[a][0] != 0)
+	{
+	  dalej = false;
+	}
+  }
+  if (dalej)
+  {
+  srand(time(0));
+  int x = szerokosc/2;
+  int y = 0;
+  klocek[0][0] = x;
+  klocek[0][1] = y;
+  plansza[x][y] = 1;
+  for (int a = 1; a < rozmiar; ) // generuj
+  {
+	int element = rand() % a;
+	int kierunek = rand() % 4;
+    y = klocek[element][1];
+	x = klocek[element][0];
+    switch (kierunek)
+    {
+	  case 0: if (y != 0 && plansza[x][y-1] == 0)
+              {
+                y--;
+                klocek[a][0] = x;
+                klocek[a][1] = y;
+                plansza[x][y] = 1;
+                a++;
+			  }break;
+      case 1: if (plansza[x][y+1] == 0)
+			  {
+				y++;
+                klocek[a][0] = x;
+                klocek[a][1] = y;
+                plansza[x][y] = 1;
+                a++;
+              }break;
+      case 2: if (plansza[x-1][y] == 0)
+              {
+                x--;
+                klocek[a][0] = x;
+                klocek[a][1] = y;
+                plansza[x][y] = 1;
+                a++;
+              }break;
+      case 3: if (plansza[x+1][y] == 0)
+              {
+                x++;
+                klocek[a][0] = x;
+                klocek[a][1] = y;
+                plansza[x][y] = 1;
+                a++;
+              }break;
+	}                 
+    srand(rand());
+  }
+  srodek();
+  return true;
+  }
+  else  // przerwij
+  {
+	gotoxy(1, wysokosc+3);
+	cout << "Przegrales!" <<  endl;
+	cout  <<  "Chcesz zaczac gre od nowa? T/N"  <<  endl;
+	if (restart() == 1) {
+		start();
+		wyswietl();
+		return true;
+	}
+	else return false;
+  }
+}
+
+void start() // zerowanie tablicy
+{
+  for (int a = 0; a < szerokosc; a++)
+  {
+	for (int b = 0; b < wysokosc; b++)
+    {
+	  plansza[a][b] = 0;
+	}
+  }
+}
+
+void odswiez()
+{
+  for (int a = 0; a < wysokosc; a++)  // rysowanie klockow
+  {
+	gotoxy(2, a+2);
+	for(int b = 0; b < szerokosc; b++)
+	{
+	  if (plansza[b][a] == 1) {  // leci
+		textcolor(10); 
+		putch(177);
+	  }
+	  else if (plansza[b][a] == 2) {  // lezy
+		textcolor(2); 
+		putch(178);
+	  }
+      else cout << " ";
+    }
+  }
+  gotoxy(szerokosc+4, 1);    // statystyki
+  cout << "Punkty: " << punkty << endl;
+  gotoxy(szerokosc+4, 2);
+  cout << "Combo: " << combo << endl;
+  gotoxy(szerokosc+4, 3);
+  cout << "Poziom: " << poziom << endl;
+}
+
+bool wczytaj()   // klawisze
+{
+  bool czy = true;
+  char znak = getch();
+	  switch (znak)
+	  {
+		case 72: obroc();break;
+		case 80: czy = spadaj();break;
+		case 75: lewo();break;
+		case 77: prawo();break;
+	  }
+  return czy;
+}
+
+bool spadaj() // przesuwanie obiektu w tablicy
+{
+  bool czy = true;
+  for (int a = 0; a < rozmiar; a++)
+  {
+	if (klocek[a][1]+1 >= wysokosc || plansza[klocek[a][0]][klocek[a][1]+1] == 2) // stop
+	{                                                                             // spadanie
+      czy = false;
+    }
+  }
+  if (czy)
+  {
+	for (int a = 0; a < rozmiar; a++) // przesuwanie
+	{
+	  plansza[klocek[a][0]][klocek[a][1]] = 0; // usun stara pozycje
+      klocek[a][1]++;
+    }
+	for (int a = 0; a < rozmiar; a++)
+	{
+	  plansza[klocek[a][0]][klocek[a][1]] = 1; // napisz nowa
+    }
+    return true;
+  }
+  else
+  {
+	for (int a = 0; a < rozmiar; a++)
+    {
+      plansza[klocek[a][0]][klocek[a][1]] = 2;
+	}
+	czy_combo = false;
+	for (int a = 0; a < wysokosc; a++)
+    {
+	  if(linia(a)) // jesli w jednej linii
+      {
+        zbij(a);
+        combo++;
+        czy_combo = true;
+        linie++;
+      }
+    }
+	if (!czy_combo)  // mnozenie punktow - combo
+    {
+	  punkty += combo*combo;
+      combo = 0;
+    }
+	if (linie >= 5)  // zwiekszanie poziomu
+    {
+	  linie %= 5;
+	  poziom++;
+    }
+    return false;
+  }
+}
+
+void lewo()
+{
+  bool czy = true;
+  for (int a = 0; a < rozmiar; a++)
+  {
+    if (klocek[a][0]-1 < 0 || plansza[klocek[a][0]-1][klocek[a][1]] == 2)
+    {
+      czy = false;
+    }
+  }
+  if (czy)
+  {
+	for (int a = 0; a < rozmiar; a++)
+    {
+      plansza[klocek[a][0]][klocek[a][1]] = 0;
+      klocek[a][0]--;
+    }
+	for (int a = 0; a < rozmiar; a++)
+    {
+      plansza[klocek[a][0]][klocek[a][1]] = 1;
+    }
+  }
+}
+
+void prawo()
+{
+  bool czy = true;
+  for (int a = 0; a < rozmiar; a++)
+  {
+	if (klocek[a][0]+1 >= szerokosc || plansza[klocek[a][0]+1][klocek[a][1]] == 2)
+    {
+      czy = false;
+    }
+  }
+  if (czy)
+  {
+	for (int a = 0; a < rozmiar; a++)
+    {
+      plansza[klocek[a][0]][klocek[a][1]] = 0;
+      klocek[a][0]++;
+    }
+	for (int a = 0; a < rozmiar; a++)
+    {
+      plansza[klocek[a][0]][klocek[a][1]] = 1;
+    }
+  }
+}
+
+bool linia(int a) // zapelniony wiersz
+{
+  bool czy = true;
+  for (int b = 0; b < szerokosc; b++)
+  {
+	if (plansza[b][a] != 2)
+    {
+      czy = false;
+    }
+  }
+  return czy;
+}
+
+void zbij(int a)  // zbicie linii i przesuniecie w dol
+{
+  for (int b = a; b > 0; b--)
+  {
+	for (int c = 0; c < szerokosc; c++)
+    {
+      plansza[c][b] = plansza[c][b-1];
+    }
+  }
+  for (int b = 0; b < szerokosc; b++)
+  {
+    plansza[b][0] = 0;
+  }
+}
+
+void obroc()
+{
+  bool czy = true;
+
+  for (int a = 1; a < rozmiar; a++)
+  {
+	  int x = klocek[a][0]-klocek[0][0];
+	  int y = klocek[a][1]-klocek[0][1];
+	  if (plansza[klocek[0][0]-y][klocek[0][1]+x] == 2     // czy mozna obrocic. kolizje
+			|| klocek[0][1]+x >= wysokosc || klocek[0][1]+x < 0
+			|| klocek[0][0]-y >= szerokosc || klocek[0][0]-y < 0) {
+	  czy = false;
+	  }
+  }
+  if (czy)
+  {
+	  for (int a = 1; a < rozmiar; a++)  // obracanie
+	  {
+		  int x = klocek[a][0]-klocek[0][0];
+		  int y = klocek[a][1]-klocek[0][1];
+		  plansza[klocek[a][0]][klocek[a][1]] = 0;
+		  klocek[a][0] = klocek[0][0]-y;
+		  klocek[a][1] = klocek[0][1]+x;
+	  }
+  }
+  for (int a = 0; a < rozmiar; a++)
+  {
+	plansza[klocek[a][0]][klocek[a][1]] = 1; // uzupelnij tablice
+  }
+}
+
+void srodek() // ustalanie srodka klocka
+{
+  double x = 0;
+  double y = 0;
+  for (int a = 0; a < rozmiar; a++)
+  {
+	x += klocek[a][0];
+	y += klocek[a][1];
+  }
+  x /= 4;
+  y /= 4;
+  bool czy = true;
+  for (int a = 1; a < rozmiar && czy; a++)
+  {
+	if ((klocek[a][0] == round(x)) && (klocek[a][1] == round(y)))
+	{
+	  zamien_srodek(a);
+	  czy = false;
+	}
+  }
+}
+
+void zamien_srodek(int a)  // zmiana srodka klocka
+{
+  int tym = klocek[0][0];
+  klocek[0][0] = klocek[a][0];
+  klocek[a][0] = tym;
+  tym = klocek[0][1];
+  klocek[0][1] = klocek[a][1];
+  klocek[a][1] = tym;
+}
+
+double round(double x) // funkcja zaokraglania
+{
+	return floor(x + 0.5);
+}
+
+bool restart() // restart gry
+{
+	char znak = getch();
+	switch (znak)
+	{
+	case 116: {
+		combo = 0;
+		punkty = 0;
+		poziom = 1;
+		for (int a = szerokosc/2-rozmiar/2;a <= szerokosc/2+rozmiar/2;a++)
+		{
+			plansza[a][0] = 0;
+		}
+		return true;
+		}
+	case 110: return false;
+	default: restart();
+	}
+}
+
+void rozpocznij() // sygnatura
+{
+	textcolor(4);
+	printf("#######                              \n");
+	printf("   #    ###### ##### #####  #  ####  \n");
+	printf("   #    #        #   #    # # #      \n");
+	printf("   #    #####    #   #    # #  ####  \n");
+	printf("   #    #        #   #####  #      # \n");
+	printf("   #    #        #   #   #  # #    # \n");
+	printf("   #    ######   #   #    # #  ####  Ver 1.0\n\n");
+
+	printf("Autor: Rafal Olszewski\n\nAby rozpaczac gre nacisnij dowolny klawisz...");
+	getch();
+}
+
