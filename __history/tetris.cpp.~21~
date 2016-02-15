@@ -50,7 +50,7 @@ bool Line(int);
 bool Restart();
 void ButtonPause();
 void BonusPauses();
-//double round(double); // to win32
+double round(double); // to win32
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -475,6 +475,6 @@ void Begin() // signature
 void BonusPauses() {
 	if (points >= stepbuffer) {
 		pauses++;
-		stepbuffer += step;
+		stepbuffers += step;
 	}
 }

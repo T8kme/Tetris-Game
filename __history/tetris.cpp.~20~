@@ -26,7 +26,7 @@ int points = 50;
 int combo = 0;
 int pauses = 1;
 int step = 10; // in multiply of what number, player receive bonus pause
-int stepbuffer;
+int stepbuffor;
 int board[g_width][g_high];
 int block[g_size][2];
 bool if_combo = false;
@@ -50,7 +50,7 @@ bool Line(int);
 bool Restart();
 void ButtonPause();
 void BonusPauses();
-//double round(double); // to win32
+double round(double); // to win32
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -191,7 +191,7 @@ void Start() // clear table
 			board[a][b] = 0;
 		}
 	}
-	stepbuffer = step;
+	stepbuffor = step;
 }
 
 void Refresh() {
@@ -473,8 +473,8 @@ void Begin() // signature
 }
 
 void BonusPauses() {
-	if (points >= stepbuffer) {
+	if (points >= stepbuffor) {
 		pauses++;
-		stepbuffer += step;
+		stepbuffor += step;
 	}
 }

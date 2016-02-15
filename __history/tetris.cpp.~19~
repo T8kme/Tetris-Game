@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 // 																			  //
-// 																			  //
-//  						   Tetris  Game v1.0                              //
-//  							Rafa³ Olszewski                               //
-//  								E4Y2S1                                    //
-//  																		  //
-// 																			  //
+//																			  //
+// 							   Tetris  Game v1.0                              //
+// 								Rafa³ Olszewski                               //
+// 									E4Y2S1                                    //
+//                                                                            //
+// 																		      //
 ////////////////////////////////////////////////////////////////////////////////
 #include  <iostream>
 #include  <ctime>
@@ -22,15 +22,13 @@ const int g_width = 14; // max. 30
 const int g_size = 4; // max. 4
 int level = 1;
 int lines = 0;
-int points = 50;
+int points = 0;
 int combo = 0;
 int pauses = 1;
-int step = 10; // in multiply of what number, player receive bonus pause
-int stepbuffer;
 int board[g_width][g_high];
 int block[g_size][2];
-bool if_combo = false;
-bool pause = false;
+bool if_combo;
+bool pause;
 
 // Functions
 void Begin();
@@ -48,9 +46,8 @@ bool Load();
 bool Fall();
 bool Line(int);
 bool Restart();
-void ButtonPause();
-void BonusPauses();
-//double round(double); // to win32
+bool ButtonPause();
+double round(double);  // to win32
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -62,17 +59,20 @@ int main() {
 		Refresh();
 		bool next = true;
 		for (int a = 0; next; a++) {
-			int limit = 5000 / level;
-			if (!pause && a > limit) {
+			int limit = 50000 / level;
+			if (a > limit) {
 				a = 0;
 				next = Fall();
 				Refresh();
 			}
 			if (kbhit()) {
+				if (ButtonPause()) {
+					pause = 1;
+					Refresh();
+				}
 				next = Load();
 				Refresh();
 			}
-			BonusPauses();
 		}
 	}
 	return 0;
@@ -102,86 +102,91 @@ void Draw() // Drawborder
 }
 
 bool Create() {
-	if (!pause) {
-		bool next = true;
-		for (int a = g_width / 2 - g_size / 2;
-		a <= g_width / 2 + g_size / 2; a++) // check if line is clear
-		{
-			if (board[a][0] != 0) {
-				next = false;
-			}
-		}
-		if (next) {
-			srand(time(0));
-			int x = g_width / 2;
-			int y = 0;
-			block[0][0] = x;
-			block[0][1] = y;
-			board[x][y] = 1;
-			for (int a = 1; a < g_size;) // Create block
-			{
-				int element = rand() % a;
-				int direction = rand() % 4;
-				y = block[element][1];
-				x = block[element][0];
-				switch (direction) {
-				case 0:
-					if (y != 0 && board[x][y - 1] == 0) {
-						y--;
-						block[a][0] = x;
-						block[a][1] = y;
-						board[x][y] = 1;
-						a++;
-					}
-					break;
-				case 1:
-					if (board[x][y + 1] == 0) {
-						y++;
-						block[a][0] = x;
-						block[a][1] = y;
-						board[x][y] = 1;
-						a++;
-					}
-					break;
-				case 2:
-					if (board[x - 1][y] == 0) {
-						x--;
-						block[a][0] = x;
-						block[a][1] = y;
-						board[x][y] = 1;
-						a++;
-					}
-					break;
-				case 3:
-					if (board[x + 1][y] == 0) {
-						x++;
-						block[a][0] = x;
-						block[a][1] = y;
-						board[x][y] = 1;
-						a++;
-					}
-					break;
-				}
-				srand(rand());
-			}
-			Center();
-			return true;
-		}
-		else // stop
-		{
-			gotoxy(1, g_high + 3);
-			cout << "Game over!" << endl;
-			cout << "Do you want start game again? T/N" << endl;
-			if (Restart() == 1) {
-				Start();
-				Draw();
-				return true;
-			}
-			else
-				return false;
+if (pause) {
+
+
+	bool next = true;
+	for (int a = g_width / 2 - g_size / 2;
+	a <= g_width / 2 + g_size / 2; a++) // check if line is clear
+	{
+		if (board[a][0] != 0) {
+			next = false;
 		}
 	}
-	else return true;
+	if (next) {
+		srand(time(0));
+		int x = g_width / 2;
+		int y = 0;
+		block[0][0] = x;
+		block[0][1] = y;
+		board[x][y] = 1;
+		for (int a = 1; a < g_size;) // Create block
+		{
+			int element = rand() % a;
+			int direction = rand() % 4;
+			y = block[element][1];
+			x = block[element][0];
+			switch (direction) {
+			case 0:
+				if (y != 0 && board[x][y - 1] == 0) {
+					y--;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			case 1:
+				if (board[x][y + 1] == 0) {
+					y++;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			case 2:
+				if (board[x - 1][y] == 0) {
+					x--;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			case 3:
+				if (board[x + 1][y] == 0) {
+					x++;
+					block[a][0] = x;
+					block[a][1] = y;
+					board[x][y] = 1;
+					a++;
+				}
+				break;
+			}
+			srand(rand());
+		}
+		Center();
+		return true;
+	}
+	else // stop
+	{
+		gotoxy(1, g_high + 3);
+		cout << "Game over!" << endl;
+		cout << "Do you want start game again? T/N" << endl;
+		if (Restart() == 1) {
+			Start();
+			Draw();
+			return true;
+		}
+		else
+			return false;
+	}
+	}
+	else {
+		gotoxy(g_width + 4, 4);
+		cout << "Pasue avaliable: " << pauses << endl;
+	}
 }
 
 void Start() // clear table
@@ -191,44 +196,33 @@ void Start() // clear table
 			board[a][b] = 0;
 		}
 	}
-	stepbuffer = step;
 }
 
 void Refresh() {
-	if (!pause) {
-		for (int a = 0; a < g_high; a++) // draw blocks
-		{
-			gotoxy(2, a + 2);
-			for (int b = 0; b < g_width; b++) {
-				if (board[b][a] == 1) { // moving
-					textcolor(10);
-					putch(177);
-				}
-				else if (board[b][a] == 2) { // laying
-					textcolor(2);
-					putch(178);
-				}
-				else
-					cout << " ";
+	for (int a = 0; a < g_high; a++) // draw blocks
+	{
+		gotoxy(2, a + 2);
+		for (int b = 0; b < g_width; b++) {
+			if (board[b][a] == 1) { // moving
+				textcolor(10);
+				putch(177);
 			}
+			else if (board[b][a] == 2) { // laying
+				textcolor(2);
+				putch(178);
+			}
+			else
+				cout << " ";
 		}
-		gotoxy(g_width + 4, 1); // stats
-		cout << "Points: " << points << endl;
-		gotoxy(g_width + 4, 2);
-		cout << "Combo: " << combo << endl;
-		gotoxy(g_width + 4, 3);
-		cout << "Level: " << level << endl;
-		gotoxy(g_width + 4, 4);
-		cout << "Pauses avaliable: " << pauses << endl;
-		gotoxy(g_width + 4, 6);
-		cout << "      " << endl;
 	}
-	else {
-		gotoxy(g_width + 4, 4);
-		cout << "Pauses avaliable: " << pauses << endl;
-		gotoxy(g_width + 4, 6);
-		printf("PAUSE!\n");
-	}
+	gotoxy(g_width + 4, 1); // stats
+	cout << "Points: " << points << endl;
+	gotoxy(g_width + 4, 2);
+	cout << "Combo: " << combo << endl;
+	gotoxy(g_width + 4, 3);
+	cout << "Level: " << level << endl;
+	gotoxy(g_width + 4, 4);
+	cout << "Pasue avaliable: " << pauses << endl;
 }
 
 bool Load() // keys
@@ -237,19 +231,16 @@ bool Load() // keys
 	char typedChar = getch();
 	switch (typedChar) {
 	case 72:
-		if (!pause) Rotate();
+		Rotate();
 		break;
 	case 80:
-		if (!pause) correct = Fall();
+		correct = Fall();
 		break;
 	case 75:
-		if (!pause) To_Left();
+		To_Left();
 		break;
 	case 77:
-		if (!pause) To_Right();
-		break;
-	case 112:
-		ButtonPause();
+		To_Right();
 		break;
 	}
 	return correct;
@@ -259,8 +250,7 @@ bool Fall() // move block down
 {
 	bool correct = true;
 	for (int a = 0; a < g_size; a++) {
-		if (block[a][1] + 1 >= g_high || board[block[a][0]][block[a][1] +
-			1] == 2) // stop
+		if (block[a][1] + 1 >= g_high || board[block[a][0]][block[a][1] + 1] == 2) // stop
 		{ // falling
 			correct = false;
 		}
@@ -370,9 +360,10 @@ void Rotate() {
 	for (int a = 1; a < g_size; a++) {
 		int x = block[a][0] - block[0][0];
 		int y = block[a][1] - block[0][1];
-		if (board[block[0][0] - y][block[0][1] + x] == 2 // if rotate possible
-			|| block[0][1] + x >= g_high || block[0][1] + x < 0 || block[0][0] -
-			y >= g_width || block[0][0] - y < 0) {
+		if (board[block[0][0] - y][block[0][1] +
+			x] == 2 // if rotate possible
+			|| block[0][1] + x >= g_high || block[0][1] + x < 0
+			|| block[0][0] - y >= g_width || block[0][0] - y < 0) {
 			correct = false;
 		}
 	}
@@ -433,8 +424,6 @@ bool Restart() // Game restart
 			combo = 0;
 			points = 0;
 			level = 1;
-			pauses = 1;
-			pause = false;
 			for (int a = g_width / 2 - g_size / 2;
 			a <= g_width / 2 + g_size / 2; a++) {
 				board[a][0] = 0;
@@ -448,13 +437,11 @@ bool Restart() // Game restart
 	}
 }
 
-void ButtonPause() // Game pause
+bool ButtonPause() // Game pause
 {
-	if (pauses > 0 && !pause) {
-		pauses--;
-		pause = true;
-	}
-	else pause = false;
+	char typedChar = getch();
+	if (typedChar == 80 || typedChar == 112) return true;
+	else return false;
 }
 
 void Begin() // signature
@@ -470,11 +457,4 @@ void Begin() // signature
 	printf("Author: Rafal Olszewski E4Y2S1\n\nTo start please press any key..."
 		);
 	getch();
-}
-
-void BonusPauses() {
-	if (points >= stepbuffer) {
-		pauses++;
-		stepbuffer += step;
-	}
 }
