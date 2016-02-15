@@ -14,13 +14,15 @@
 
 #define BORDER_COLOR 1 // change border color
 
+using namespace std;
+
 // Variable declarations
 const int g_high = 16; // max. 40
 const int g_width = 14; // max. 30
 const int g_size = 4; // max. 4
 int level = 1;
 int lines = 0;
-int points = 0;
+int points = 50;
 int combo = 0;
 int pauses = 1;
 int step = 10; // in multiply of what number, player receive bonus pause
@@ -48,7 +50,7 @@ bool Line(int);
 bool Restart();
 void ButtonPause();
 void BonusPauses();
-double round(double); // to win32
+//double round(double); // to win32
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -60,7 +62,7 @@ int main() {
 		Refresh();
 		bool next = true;
 		for (int a = 0; next; a++) {
-			int limit = 50000 / level;
+			int limit = 5000 / level;
 			if (!pause && a > limit) {
 				a = 0;
 				next = Fall();
@@ -92,7 +94,7 @@ void Draw() // Drawborder
 		gotoxy(g_width + 2, a + 1);
 		putch(219);
 	}
-	printf(" \n");
+	cout << endl;
 	for (int a = 0; a < g_width + 2; a++) {
 		textcolor(BORDER_COLOR);
 		putch(219);
@@ -110,7 +112,7 @@ bool Create() {
 			}
 		}
 		if (next) {
-			std::srand(time(0));
+			srand(time(0));
 			int x = g_width / 2;
 			int y = 0;
 			block[0][0] = x;
@@ -118,8 +120,8 @@ bool Create() {
 			board[x][y] = 1;
 			for (int a = 1; a < g_size;) // Create block
 			{
-				int element = std::rand() % a;
-				int direction = std::rand() % 4;
+				int element = rand() % a;
+				int direction = rand() % 4;
 				y = block[element][1];
 				x = block[element][0];
 				switch (direction) {
@@ -160,7 +162,7 @@ bool Create() {
 					}
 					break;
 				}
-				std::srand(std::rand());
+				srand(rand());
 			}
 			Center();
 			return true;
@@ -168,8 +170,8 @@ bool Create() {
 		else // stop
 		{
 			gotoxy(1, g_high + 3);
-			printf("Game over!\n");
-			printf("Do you want start game again? T/N\n");
+			cout << "Game over!" << endl;
+			cout << "Do you want start game again? T/N" << endl;
 			if (Restart() == 1) {
 				Start();
 				Draw();
@@ -207,23 +209,23 @@ void Refresh() {
 					putch(178);
 				}
 				else
-					printf(" ");
+					cout << " ";
 			}
 		}
 		gotoxy(g_width + 4, 1); // stats
-		printf("Points: %d\n", points);
+		cout << "Points: " << points << endl;
 		gotoxy(g_width + 4, 2);
-		printf("Combo: %d\n", combo);
+		cout << "Combo: " << combo << endl;
 		gotoxy(g_width + 4, 3);
-		printf("Level: %d\n", level);
+		cout << "Level: " << level << endl;
 		gotoxy(g_width + 4, 4);
-		printf("Pauses avaliable: %d\n", pauses);
+		cout << "Pauses avaliable: " << pauses << endl;
 		gotoxy(g_width + 4, 6);
-		printf("      ");
+		cout << "      " << endl;
 	}
 	else {
 		gotoxy(g_width + 4, 4);
-		printf("Pauses avaliable: %d\n", pauses);
+		cout << "Pauses avaliable: " << pauses << endl;
 		gotoxy(g_width + 4, 6);
 		printf("PAUSE!\n");
 	}
@@ -420,7 +422,7 @@ void Change_Center(int a) // change block center
 
 double round(double x) // round function
 {
-	return std::floor(x + 0.5);
+	return floor(x + 0.5);
 }
 
 bool Restart() // Game restart
